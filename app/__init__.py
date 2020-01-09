@@ -9,7 +9,7 @@ jwt = JWTManager()
 from .nutanix import PrismClient
 prism = PrismClient()
 
-from .models import User, authenticate, identify
+from .models import User, authenticate, identify, load_user
 
 
 def create_app(config_name):
@@ -28,7 +28,7 @@ def create_app(config_name):
             result.append(user.__repr__())
         return jsonify(result)
 
-    @app.route('/login', methods=['POST'])
+    @app.route('/auth', methods=['POST'])
     def login():
         if not request.is_json:
             return jsonify({"msg": "Missing JSON in request"}), 400
@@ -51,7 +51,8 @@ def create_app(config_name):
     @jwt_required
     def current_user():
         user = get_jwt_identity()
-        return jsonify(logged_in_as=user), 200
+        # return jsonify(logged_in_as=user), 200
+        return jsonify(load_user(user).json()), 200
 
     with app.app_context():
         db.create_all()

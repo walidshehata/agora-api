@@ -19,8 +19,13 @@ class User(db.Model):
             'username': self.id,
             'display_name': self.display_name,
             'uuid': self.uuid,
-            'cookie': self.cookie
+            'cookie': self.cookie,
+            'tenant_id': self.tenant_id,
+            'tenant_uuid': self.tenant_uuid
         }
+
+    def json(self):
+        return self.__repr__()
 
 
 def load_user(user_id):
@@ -34,15 +39,14 @@ def identify(payload):
 
 def authenticate(username, password):
     domain = Config.DOMAIN
-    auth_url = 'https://{}:{}/api/nutanix/v3/users/me'.format(Config.PC_HOST, Config.PC_PORT)
+    auth_url = 'api/nutanix/v3/users/me'.format(Config.PC_HOST, Config.PC_PORT)
     encoded_credentials = b64encode(bytes(f'{username}@{domain}:{password}',
                                           encoding='ascii')).decode('ascii')
     auth_header = f'Basic {encoded_credentials}'
     headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
                'Authorization': f'{auth_header}', 'cache-control': 'no-cache'}
 
-    response = http_request(url=auth_url, headers=headers, verify_ssl=Config.VERIFY_SSL,
-                            timeout=Config.HTTP_TIMEOUT)
+    response = http_request(url=auth_url, headers=headers)
     try:
         data = response.json()
         if response.status_code == 200:
@@ -60,8 +64,8 @@ def authenticate(username, password):
                 tenant_id = None
                 tenant_uuid = None
                 for project in data['status']['resources']['projects_reference_list']:
-                    if project['name'][:9] == 'CUSTOMER-':
-                        tenant_id = project['name'][9:]
+                    if project['name'][:7].upper() == 'TENANT-':
+                        tenant_id = project['name'][7:].upper()
                         tenant_uuid = project['uuid']
                 user = User(id=username, display_name=data['status']['resources']['display_name'],
                             uuid=data['metadata']['uuid'], tenant_uuid=tenant_uuid, tenant_id=tenant_id,

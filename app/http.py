@@ -3,21 +3,32 @@ import logging as log
 import urllib3
 import json
 
+from config import Config
 
-def http_request(url, headers={}, data=None, method='get', timeout=3, jwt=None, cookie=None, verify_ssl=False):
 
-    if url[:5].lower() == 'https' and not verify_ssl:
+def http_request(url, headers={}, data=None, method='get',
+                 token=None, cookie=None):
+
+    https = Config.HTTPS
+    timeout = Config.HTTP_TIMEOUT
+    verify_ssl = Config.VERIFY_SSL
+    if https:
+        url = 'https://{}:{}/{}'.format(Config.PC_HOST, Config.PC_PORT, url)
+    else:
+        url = 'http://{}:{}/{}'.format(Config.PC_HOST, Config.PC_PORT, url)
+
+    if https and not verify_ssl:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    if jwt:
-        headers['Authorization'] = 'JWT {}'.format(jwt)
+    if token:
+        headers['Authorization'] = 'Bearer {}'.format(token)
 
     if cookie:
         headers['Set-Cookie'] = '{}={}'.format(cookie.name, cookie.value)
 
     try:
         # https requests apply verify_ssl option
-        if url[:5].lower() == 'https':
+        if https:
             if method.lower() == 'get':
                 response = requests.get(url, headers=headers, timeout=timeout, verify=verify_ssl)
             elif method.lower() == 'post':
