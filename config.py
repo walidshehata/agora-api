@@ -12,6 +12,10 @@ class Config:
     VERIFY_SSL = False
     HTTPS = True
     HTTP_TIMEOUT = 3
+    PC_USERNAME = 'admin'
+    PC_PASSWORD = 'nx2Tech911!'
+    AGORA_APP_NAME = 'SYS-AGORA'
+    ONBOARD_ACTION_NAME = 'onboard_new_customer'
 
     @staticmethod
     def init_app(app):

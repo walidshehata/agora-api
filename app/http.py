@@ -2,25 +2,34 @@ import requests
 import logging as log
 import urllib3
 import json
+from base64 import b64encode
 
 from config import Config
 
 
 def http_request(url, headers={}, data=None, method='get',
-                 token=None, cookie=None):
+                 cred=None, token=None, cookie=None):
 
     https = Config.HTTPS
     timeout = Config.HTTP_TIMEOUT
     verify_ssl = Config.VERIFY_SSL
+    host = Config.PC_HOST
+    port = Config.PC_PORT
+
     if https:
-        url = 'https://{}:{}/{}'.format(Config.PC_HOST, Config.PC_PORT, url)
+        url = f'https://{host}:{port}/{url}'
     else:
-        url = 'http://{}:{}/{}'.format(Config.PC_HOST, Config.PC_PORT, url)
+        url = f'http://{host}:{port}/{url}'
 
     if https and not verify_ssl:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    if token:
+    if cred:
+        username = cred.get('username')
+        password = cred.get('password')
+        encoded_credentials = b64encode(bytes(f'{username}:{password}', encoding='ascii')).decode('ascii')
+        headers['Authorization'] = f'Basic {encoded_credentials}'
+    elif token:
         headers['Authorization'] = 'Bearer {}'.format(token)
 
     if cookie:
@@ -32,6 +41,7 @@ def http_request(url, headers={}, data=None, method='get',
             if method.lower() == 'get':
                 response = requests.get(url, headers=headers, timeout=timeout, verify=verify_ssl)
             elif method.lower() == 'post':
+                headers['Content-Type'] = 'application/json'
                 response = requests.post(url, data=json.dumps(data), headers=headers, timeout=timeout,
                                          verify=verify_ssl)
             else:

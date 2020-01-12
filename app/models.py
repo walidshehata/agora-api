@@ -1,8 +1,4 @@
-from base64 import b64encode
-import logging as log
 from . import db
-from config import Config
-from .http import http_request
 
 
 class User(db.Model):
@@ -13,69 +9,41 @@ class User(db.Model):
     tenant_id = db.Column(db.String(16), default=None)
     tenant_uuid = db.Column(db.String(36), default=None)
     cookie = db.Column(db.String(), default=None)
+    mail = db.Column(db.String(60), default=None)
+    company = db.Column(db.String(60), default=None)
+    mobile = db.Column(db.String(60), default=None)
 
     def __repr__(self):
         return {
-            'username': self.id,
-            'display_name': self.display_name,
+            'id': self.id,
             'uuid': self.uuid,
-            'cookie': self.cookie,
+            'display_name': self.display_name,
             'tenant_id': self.tenant_id,
-            'tenant_uuid': self.tenant_uuid
+            'tenant_uuid': self.tenant_uuid,
+            # 'cookie': self.cookie,
+            'mail': self.mail,
+            'company': self.company,
+            'mobile': self.mobile
         }
 
-    def json(self):
+    def dict(self):
         return self.__repr__()
 
+    @staticmethod
+    def load_user(user_id):
+        return User.query.filter_by(id=user_id).first()
 
-def load_user(user_id):
-    return User.query.filter_by(id=user_id).first()
+    @staticmethod
+    def identify(payload):
+        return User.query.filter(id=payload['identity']).first()
 
 
-def identify(payload):
-    return User.query.filter(id=payload['identity']).first()
-    # return 'hello'
+# def load_user(user_id):
+#     return User.query.filter_by(id=user_id).first()
 
 
-def authenticate(username, password):
-    domain = Config.DOMAIN
-    auth_url = 'api/nutanix/v3/users/me'.format(Config.PC_HOST, Config.PC_PORT)
-    encoded_credentials = b64encode(bytes(f'{username}@{domain}:{password}',
-                                          encoding='ascii')).decode('ascii')
-    auth_header = f'Basic {encoded_credentials}'
-    headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
-               'Authorization': f'{auth_header}', 'cache-control': 'no-cache'}
+# def identify(payload):
+#     return User.query.filter(id=payload['identity']).first()
 
-    response = http_request(url=auth_url, headers=headers)
-    try:
-        data = response.json()
-        if response.status_code == 200:
 
-            session_cookie = None
-            for cookie in response.cookies:
-                if cookie.name == 'NTNX_IGW_SESSION':
-                    session_cookie = cookie.value
 
-            user = load_user(username)
-
-            if user:
-                user.cookie = session_cookie
-            else:
-                tenant_id = None
-                tenant_uuid = None
-                for project in data['status']['resources']['projects_reference_list']:
-                    if project['name'][:7].upper() == 'TENANT-':
-                        tenant_id = project['name'][7:].upper()
-                        tenant_uuid = project['uuid']
-                user = User(id=username, display_name=data['status']['resources']['display_name'],
-                            uuid=data['metadata']['uuid'], tenant_uuid=tenant_uuid, tenant_id=tenant_id,
-                            cookie=session_cookie)
-
-            db.session.add(user)
-            db.session.commit()
-            return user
-        else:
-            log.info('Error authenticating user: {}, bad username or password'.format(username))
-            return None
-    except AttributeError:
-        return None

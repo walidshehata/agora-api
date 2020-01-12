@@ -1,6 +1,6 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import JWTManager
 from config import config
 
 db = SQLAlchemy()
@@ -9,7 +9,7 @@ jwt = JWTManager()
 from .nutanix import PrismClient
 prism = PrismClient()
 
-from .models import User, authenticate, identify, load_user
+from .models import User
 
 
 def create_app(config_name):
@@ -21,38 +21,16 @@ def create_app(config_name):
     jwt.init_app(app)
     prism.init_app(app)
 
+    # temporary API call to display all logged users in memory
     @app.route('/')
     def index():
         result = []
         for user in db.session.query(User).all():
-            result.append(user.__repr__())
+            result.append(user.dict())
         return jsonify(result)
 
-    @app.route('/auth', methods=['POST'])
-    def login():
-        if not request.is_json:
-            return jsonify({"msg": "Missing JSON in request"}), 400
-
-        username = request.json.get('username', None)
-        password = request.json.get('password', None)
-        if not username:
-            return jsonify({"msg": "Missing username parameter"}), 400
-        if not password:
-            return jsonify({"msg": "Missing password parameter"}), 400
-
-        user = authenticate(username, password)
-        if user:
-            access_token = create_access_token(identity=username)
-            return jsonify(access_token=access_token), 200
-        else:
-            return jsonify({"msg": "Bad username or password"}), 401
-
-    @app.route('/me')
-    @jwt_required
-    def current_user():
-        user = get_jwt_identity()
-        # return jsonify(logged_in_as=user), 200
-        return jsonify(load_user(user).json()), 200
+    from .auth import auth as auth_blueprint
+    app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
     with app.app_context():
         db.create_all()
