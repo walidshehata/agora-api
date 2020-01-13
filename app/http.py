@@ -51,6 +51,7 @@ def http_request(url, headers={}, data=None, method='get',
             if method.lower() == 'get':
                 response = requests.get(url, headers=headers, timeout=timeout)
             elif method.lower() == 'post':
+                headers['Content-Type'] = 'application/json'
                 response = requests.post(url, data=json.dumps(data), headers=headers, timeout=timeout)
             else:
                 response = None

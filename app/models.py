@@ -38,12 +38,3 @@ class User(db.Model):
         return User.query.filter(id=payload['identity']).first()
 
 
-# def load_user(user_id):
-#     return User.query.filter_by(id=user_id).first()
-
-
-# def identify(payload):
-#     return User.query.filter(id=payload['identity']).first()
-
-
-

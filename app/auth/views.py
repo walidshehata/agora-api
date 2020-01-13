@@ -46,7 +46,6 @@ def onboard_new_customer():
     firstname = request.json.get('firstname', None)
     lastname = request.json.get('lastname', None)
     mobile = request.json.get('mobile', None)
-    print(request.json)
 
     if not username and password and company and mail and firstname and lastname and mobile:
         return jsonify({'msg': 'Missing new user parameter'}), 400
