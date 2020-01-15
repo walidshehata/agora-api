@@ -30,7 +30,8 @@ def login():
 @jwt_required
 def current_user():
     user_id = get_jwt_identity()
-    return jsonify(User.load_user(user_id).dict()), 200
+    if user_id:
+        return jsonify(User.load_user(user_id).dict()), 200
 
 
 @auth.route('/onboard', methods=['POST'])
