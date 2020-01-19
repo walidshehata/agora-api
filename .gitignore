@@ -103,4 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# pyCharm config folder
+.idea/
+
+# Visual Studio Code config folder
 .vscode/

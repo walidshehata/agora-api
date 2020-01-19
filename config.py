@@ -5,7 +5,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'super-secret-key'
-    PC_HOST = os.environ.get('PC_HOST', '10.38.14.9')
+    PC_HOST = os.environ.get('PC_HOST', '10.38.15.9')
     PC_PORT = os.environ.get('PC_PORT', '9440')
     DOMAIN = os.environ.get('DOMAIN', 'demo.lan')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

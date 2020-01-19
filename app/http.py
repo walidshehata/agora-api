@@ -44,8 +44,6 @@ def http_request(url, headers={}, data=None, method='get',
                 headers['Content-Type'] = 'application/json'
                 response = requests.post(url, data=json.dumps(data), headers=headers, timeout=timeout,
                                          verify=verify_ssl)
-            else:
-                response = None
         else:
             # http request, so remove verify_ssl option else error is raised by requests lib
             if method.lower() == 'get':
@@ -53,23 +51,22 @@ def http_request(url, headers={}, data=None, method='get',
             elif method.lower() == 'post':
                 headers['Content-Type'] = 'application/json'
                 response = requests.post(url, data=json.dumps(data), headers=headers, timeout=timeout)
-            else:
-                response = None
+
     except requests.ConnectTimeout:
         log.error('Connection time out while connecting to {}. '
                   'Please check connectivity with backend'.format(url))
-        return False
+        return response
     except requests.ConnectionError:
         log.error('Connection error while connecting to {}. '
                   'Please check connectivity with backend.'.format(url))
-        return False
+        return response
     except requests.HTTPError:
         log.error('Connection error while connecting to {}. '
                   'Please check connectivity with backend.'.format(url))
-        return False
+        return response
     except Exception as error:
         log.error('An unexpected error while connecting to {} - '
                   'Exception: {}'.format(url, error.__class__.__name__))
-        return False
+        return response
 
     return response
